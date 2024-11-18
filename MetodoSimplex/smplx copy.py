@@ -1,12 +1,12 @@
 import numpy as np
 
 def isValid(z):
-    return np.any(z<0)
+    return np.any(z>0)
 
 def pivote(A,z):
     i, j = np.inf, 0
 
-    j = np.argmin(z[:-1, 0] + 1e6 * z[:-1, 1])
+    j = np.argmax(z[:-1, 0] + 1e6 * z[:-1, 1])
     l = np.inf
     i = 0
 
@@ -34,27 +34,25 @@ def display_tabla(A, num_vars, num_holguras, num_artificiales,M ,decimales=2):
 
     for i in range(A.shape[0]): 
         fila = ""
-        for j in range(A.shape[1]):  
-            fila += "\t" + formato.format(A[i, j]) 
+        for j in range(A.shape[1]): 
+            fila += "\t" + formato.format(A[i, j])  
         print(fila)
 
-def display_M(c, ):
+def display_M(c):
     print("c: ", end="\t")
-    
     for i, fila in enumerate(c):
         for j, elemento in enumerate(fila):
             if elemento == 0 and j == 1:
                 continue
-            if j == 0:
-                print(f"{elemento:.2f}", end=" ") 
+            if j== 0:
+                print(elemento, end=" ")
             else:
-                print(f"{elemento:.2f}M", end=" ")
+                print(f'{elemento}M',end="")
 
         print("\t",end="")
     print()
 
 def met_simplex_M(obj, c, A, b, M=1e6):
-
     num_vars = len(c)
     num_restr = len(b)
 
@@ -85,7 +83,7 @@ def met_simplex_M(obj, c, A, b, M=1e6):
         c_new.append([0,0])
 
     for _ in range(num_artificiales):
-        c_new.append([0,-1])
+        c_new.append([0,1])
     
     c = np.array(c_new, dtype=float)
     
@@ -105,11 +103,13 @@ def met_simplex_M(obj, c, A, b, M=1e6):
     
     z = np.copy(c) * -1
     z = np.append(z,[[0,0]], axis=0)
-    
+    display_M(c)
+    display_tabla(A, num_vars, num_restr, num_artificiales, M)
     for i, fila in enumerate(A):
         for j, elemento in enumerate(fila):
             z[j] += elemento*cb[indices[i]]
-    
+    display_M(z)
+    # Iteración del método Simplex
     q = 0
     zj = np.copy(z)
 
@@ -126,7 +126,7 @@ def met_simplex_M(obj, c, A, b, M=1e6):
         if piv == 0:
             print("Error: pivote igual a cero, no se puede continuar.")
             break
-        A[i] = A[i] / piv  
+        A[i] = A[i] / piv  # Divide la fila pivote por el pivote para hacer que el pivote sea 1
 
         for k in range(len(A)):
             if k != i:
@@ -139,11 +139,10 @@ def met_simplex_M(obj, c, A, b, M=1e6):
         display_tabla(A, num_vars, num_restr, num_artificiales, M)
         display_M(zj)
         q += 1
+        print("="*100)
 
-    print("="*100)
     print("FINAL")
     display_tabla(A, num_vars, num_restr, num_artificiales,M)
-    display_M(zj)
 
     # Extraer solución
     solution = np.zeros(num_vars)
@@ -152,14 +151,14 @@ def met_simplex_M(obj, c, A, b, M=1e6):
             solution[item] = A[i,-1]
     return solution, zj[-1][0]
 
-obj = "maximizar"
-c = [5, 4]
+obj = "minimizar"
+c = [1, -2]
 
-A = [[2, 1], 
-     [1, 1], 
-     [1, 2]]
+A = [[1, 1], 
+     [-1, 1], 
+     [0, 1]]
 
-b = [20, -18, -12]
+b = [-2, -1, 3]
 
 solution, z_value = met_simplex_M(obj, c, np.array(A), np.array(b))
 print("\nSolución óptima:")
